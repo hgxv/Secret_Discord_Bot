@@ -9,6 +9,7 @@ intents.message_content = True
 intents.reactions = True
 intents.dm_messages = True
 intents.dm_reactions = True
+intents.members = True
 
 client = discord.Client(intents=intents)
 
@@ -32,9 +33,7 @@ async def on_message(message):
         )
 
     def check_reaction_emoji(reaction, user):
-        print(reaction)
-        print(str(reaction.emoji))
-        return str(reaction.emoji) == "✅"
+        return str(reaction.emoji) == "✅" or str(reaction.emoji) == "❌"
 
     if message.content.startswith("!register"):
         user = message.author
@@ -46,6 +45,24 @@ async def on_message(message):
         )
         await msg.add_reaction("✅")
         await msg.add_reaction("❌")
+
+        try:
+            reaction, user = await client.wait_for(
+                "reaction_add", timeout=30, check=check_reaction_emoji
+            )
+
+        except asyncio.TimeoutError:
+            await user.send(
+                "Tu as mis trop longtemps à répondre, ton secret n'a pas été enregistré."
+            )
+
+        else:
+            match str(reaction):
+                case "✅":
+                    await user.send("Ton secret a bien été enregistré")
+
+                case "❌":
+                    await user.send("Ton secret n'a pas été enregistré")
 
 
 client.run(TOKEN)
