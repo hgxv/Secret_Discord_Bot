@@ -1,14 +1,12 @@
 import discord
 import asyncio
 
-from config import TOKEN
-from timer import Timer
+from config import TOKEN, CHANNEL, ADMIN_ID
+from database import register_secret, get_secret
+
 
 intents = discord.Intents.default()
 intents.message_content = True
-intents.reactions = True
-intents.dm_messages = True
-intents.dm_reactions = True
 intents.members = True
 
 client = discord.Client(intents=intents)
@@ -27,16 +25,17 @@ async def on_message(message):
     if not isinstance(message.channel, discord.channel.DMChannel):
         return
 
-    def check_if_private(secret):
-        return secret.author == message.author and isinstance(
-            secret.channel, discord.channel.DMChannel
-        )
-
-    def check_reaction_emoji(reaction, user):
-        return str(reaction.emoji) == "✅" or str(reaction.emoji) == "❌"
-
-    if message.content.startswith("!register"):
+    if message.content == "!register":
         user = message.author
+
+        def check_if_private(secret):
+            return secret.author == message.author and isinstance(
+                secret.channel, discord.channel.DMChannel
+            )
+
+        def check_reaction_emoji(reaction, user):
+            return str(reaction.emoji) == "✅" or str(reaction.emoji) == "❌"
+
         await user.send("Parfait, j'écoute ton secret !")
         secret = await client.wait_for("message", check=check_if_private)
 
@@ -59,10 +58,16 @@ async def on_message(message):
         else:
             match str(reaction):
                 case "✅":
-                    await user.send("Ton secret a bien été enregistré")
+                    await user.send(register_secret(secret.content, str(user.id)))
 
                 case "❌":
                     await user.send("Ton secret n'a pas été enregistré")
+
+    if message.author.id in ADMIN_ID:
+        channel = client.get_channel(CHANNEL)
+        if message.content == "!reveal":
+            secret = await get_secret(channel)
+            await channel.send(secret)
 
 
 client.run(TOKEN)

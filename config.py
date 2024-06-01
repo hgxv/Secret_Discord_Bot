@@ -8,10 +8,24 @@ TOKEN = os.environ.get("TOKEN")
 DB_PORT = os.environ.get("DB_PORT")
 DB_USER = os.environ.get("DB_USER")
 DB_PASS = os.environ.get("DB_PASS")
-ADMIN_ID = ["277500369343610880", "193033705411969024", "175633545660858368"]
-
+CHANNEL = int(os.environ.get("CHANNEL"))
+ADMIN_ID = [int(id) for id in os.environ.get("ADMIN_ID").split(", ")]
 
 conn = psycopg2.connect(
     database="secrets", host="localhost", user=DB_USER, password=DB_PASS, port=DB_PORT
 )
 cursor = conn.cursor()
+
+cursor.execute(
+    "SELECT EXISTS (SELECT 1 AS result FROM pg_tables WHERE tablename = 'users');"
+)
+tableExists = cursor.fetchone()[0]
+
+if not tableExists:
+    cursor.execute(
+        "CREATE TABLE users (id serial PRIMARY KEY, user_id varchar, number_secrets integer);"
+    )
+    cursor.execute(
+        "CREATE TABLE secrets (id serial PRIMARY KEY, secret text, available bool, user_id int REFERENCES users (id));"
+    )
+    conn.commit()
