@@ -4,22 +4,25 @@ from config import cursor, conn
 
 
 def register_secret(secret, user_id):
-    print(f"{secret}, {user_id}")
-    print(type(user_id))
+    """Enregistre un secret dans la base de données"""
 
+    # Check si l'utilisateur existe dans la base de données
     cursor.execute("SELECT * from users WHERE user_id LIKE %s;", [user_id])
     user = cursor.fetchone()
 
+    # Si non: l'ajoute
     if not user:
         user = cursor.execute(
             "INSERT INTO users (user_id, number_secrets) VALUES (%s, %s)",
             (user_id, 0),
         )
 
+    # Enregistre le secret dans la base de données
     cursor.execute(
         "INSERT INTO secrets (secret, user_id, available) VALUES (%s, %s, %s)",
         (secret, user[0], True),
     )
+    # Update le nombre de secret de l'utilisateur
     cursor.execute(
         "UPDATE users SET number_secrets=%s WHERE id=%s;", (user[2] + 1, user[0])
     )
@@ -31,23 +34,30 @@ def register_secret(secret, user_id):
 
 
 async def get_secret(channel):
+    """Tire un secret au hasard dans la base de données"""
+
+    number_of_available_secrets = count_available_secrets()
+
+    # Pour participer, un utilisateur doit avoir enregistré au moins 2 secrets.
     cursor.execute(
-        "SELECT * FROM secrets WHERE available IS TRUE ORDER BY RANDOM() LIMIT 1;"
+        "SELECT * FROM secrets, users WHERE secrets.available IS TRUE AND users.number_secrets > 2 ORDER BY RANDOM() LIMIT 1;"
     )
     secret = cursor.fetchone()
-    cursor.execute("UPDATE secrets SET available=%s WHERE id=%s;", (False, secret[0]))
 
-    cursor.execute(
-        "SELECT COUNT(*) FROM secrets WHERE available IS TRUE ORDER BY RANDOM() LIMIT 1;"
-    )
-    number_of_available_secrets = cursor.fetchone()[0]
+    # Update le secret pour qu'il ne soit plus tiré
+    cursor.execute("UPDATE secrets SET available=%s WHERE id=%s;", [False, secret[0]])
+    conn.commit()
 
-    if number_of_available_secrets == 0:
+    if number_of_available_secrets == 1:
         await channel.send(
             "C'est le dernier secret, l'évènement va se terminer, merci à tous d'avoir participé :) !"
         )
-        time.sleep(2)
-
-    conn.commit()
 
     return f"Voici le secret d'aujourd'hui :\n\n **{secret[1]}**"
+
+
+def count_available_secrets():
+    cursor.execute(
+        "SELECT COUNT(*) FROM secrets, users WHERE available IS TRUE AND number_secrets > 1;"
+    )
+    return cursor.fetchone()[0]
