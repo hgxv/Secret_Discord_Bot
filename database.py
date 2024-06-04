@@ -40,7 +40,7 @@ async def get_secret(channel):
 
     # Pour participer, un utilisateur doit avoir enregistré au moins 2 secrets.
     cursor.execute(
-        "SELECT * FROM secrets, users WHERE secrets.available IS TRUE AND users.number_secrets > 2 ORDER BY RANDOM() LIMIT 1;"
+        "SELECT * FROM secrets, users WHERE secrets.available IS TRUE AND users.number_secrets >= 2 ORDER BY RANDOM() LIMIT 1;"
     )
     secret = cursor.fetchone()
 
