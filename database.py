@@ -1,4 +1,5 @@
 import time
+import datetime
 
 from config import cursor, conn
 
@@ -40,7 +41,7 @@ async def get_secret(channel):
 
     # Pour participer, un utilisateur doit avoir enregistré au moins 2 secrets.
     cursor.execute(
-        "SELECT * FROM secrets, users WHERE secrets.available IS TRUE AND users.number_secrets > 2 ORDER BY RANDOM() LIMIT 1;"
+        "SELECT * FROM secrets JOIN users ON secrets.user_id = users.id WHERE available IS TRUE AND number_secrets > 1 ORDER BY RANDOM() LIMIT 1;"
     )
     secret = cursor.fetchone()
 
@@ -50,14 +51,19 @@ async def get_secret(channel):
 
     if number_of_available_secrets == 1:
         await channel.send(
-            "C'est le dernier secret, l'évènement va se terminer, merci à tous d'avoir participé :) !"
+            "C'est le dernier secret, l'évènement va se terminer, merci à tous d'avoir participé 🙂 !"
         )
-
-    return f"Voici le secret d'aujourd'hui :\n\n **{secret[1]}**"
+    date = datetime.datetime.now().strftime("%d/%m/%Y")
+    return f"""Secret du jour {date}:\n" **{secret[1]}** "\nÀ qui appartient ce secret ? Vous avez jusqu'à 14h pour faire une proposition. Bonne chance !"""
 
 
 def count_available_secrets():
     cursor.execute(
-        "SELECT COUNT(*) FROM secrets, users WHERE available IS TRUE AND number_secrets > 1;"
+        "SELECT COUNT(*) FROM secrets JOIN users ON secrets.user_id = users.id WHERE available IS TRUE AND number_secrets > 1;"
     )
     return cursor.fetchone()[0]
+
+
+def get_participants():
+    cursor.execute("SELECT * FROM users WHERE number_secrets > 1;")
+    return cursor.fetchall()

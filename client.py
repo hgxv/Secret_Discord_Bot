@@ -2,7 +2,7 @@ import discord
 import asyncio
 
 from config import TOKEN, CHANNEL, ADMIN_ID
-from commands import register, reveal
+from commands import Register_event, reveal, voters
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -14,6 +14,7 @@ client = discord.Client(intents=intents)
 @client.event
 async def on_ready():
     print(f"We have logged in as {client.user}")
+    client.channel = client.get_channel(CHANNEL)
 
 
 @client.event
@@ -26,12 +27,15 @@ async def on_message(message):
 
     if message.content == "!register":
         user = message.author
-        await register(message, user, client)
+        event = Register_event(client, user, message)
+        await event.register()
 
     if message.author.id in ADMIN_ID:
-        channel = client.get_channel(CHANNEL)
         if message.content == "!reveal":
-            reveal(channel)
+            await reveal(client.channel)
+
+        if message.content == "!voters":
+            await voters(client, message.author.id)
 
 
 client.run(TOKEN)
