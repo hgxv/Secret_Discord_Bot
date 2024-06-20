@@ -10,6 +10,7 @@ DB_USER = os.environ.get("DB_USER")
 DB_PASS = os.environ.get("DB_PASS")
 CHANNEL = int(os.environ.get("CHANNEL"))
 ADMIN_ID = [int(id) for id in os.environ.get("ADMIN_ID").split(", ")]
+IS_EVENT_ON = False
 
 conn = psycopg2.connect(
     database="secrets", host="localhost", user=DB_USER, password=DB_PASS, port=DB_PORT

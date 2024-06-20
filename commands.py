@@ -1,7 +1,16 @@
 import discord
 import asyncio
 
-from database import register_secret, get_secret, get_participants
+from config import IS_EVENT_ON
+
+from database import (
+    register_secret,
+    get_secret,
+    get_participants,
+    get_secret_numbers,
+    count_available_secrets,
+    is_participating,
+)
 
 
 class Register_event:
@@ -23,6 +32,16 @@ class Register_event:
             return user == cls.user and (
                 str(reaction.emoji) == "✅" or str(reaction.emoji) == "❌"
             )
+
+        # Si l'event a déjà commencé, vérifie que l'user participe bien.
+        x = is_participating(cls.client, cls.user.id)
+        print(x)
+
+        if x is False:
+            await cls.user.send(
+                "L'évènement a déjà commencé, vous ne pouvez plus participer."
+            )
+            return
 
         await cls.user.send("Parfait, j'écoute ton secret !")
         secret = await cls.client.wait_for("message", check=check_if_private)
@@ -66,3 +85,22 @@ async def voters(client, user):
     )
     message = "Voici la liste des participants :\n- "
     await user.send(message + voters_list)
+
+
+async def secrets(user):
+    tab = get_secret_numbers(user)
+    revealed_number = len([revealed for revealed in tab if revealed[2] is False])
+    await user.send(
+        f"Vous avez {len(tab)} secrets dont {revealed_number} ont déjà été révélés"
+    )
+
+
+async def available(user):
+    await user.send(
+        f"Il reste {count_available_secrets()} secrets disponibles dans la banque"
+    )
+
+
+async def start_event(client, user):
+    client.event = True
+    await user.send("L'event a bien démarré")

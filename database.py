@@ -1,7 +1,7 @@
 import time
 import datetime
 
-from config import cursor, conn
+from config import cursor, conn, IS_EVENT_ON
 
 
 def register_secret(secret, user_id):
@@ -67,3 +67,27 @@ def count_available_secrets():
 def get_participants():
     cursor.execute("SELECT * FROM users WHERE number_secrets > 1;")
     return cursor.fetchall()
+
+
+def get_secret_numbers(user):
+    cursor.execute(
+        "SELECT * FROM secrets JOIN users ON secrets.user_id = users.id WHERE users.user_id LIKE %s;",
+        [str(user.id)],
+    )
+    return cursor.fetchall()
+
+
+def is_participating(client, user_id):
+    print("rentre dans is_participating")
+    print(f"event : {client.event}")
+
+    if client.event == True:
+        try:
+            print(f"num secrets : {get_secret_numbers(user_id)}")
+            print(f"len : {len(get_secret_numbers(user_id))}")
+            if len(get_secret_numbers(user_id)) > 1:
+                return True
+            return False
+        except:
+            print("passe dans False")
+            return False
