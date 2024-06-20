@@ -29,4 +29,6 @@ if not tableExists:
     cursor.execute(
         "CREATE TABLE secrets (id serial PRIMARY KEY, secret text, available bool, user_id int REFERENCES users (id));"
     )
+    cursor.execute("CREATE TABLE event (id serial PRIMARY KEY, is_event_on bool);")
+    cursor.execute("INSERT INTO event (is_event_on) VALUES (%s);", [False])
     conn.commit()

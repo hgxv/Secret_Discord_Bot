@@ -10,6 +10,7 @@ from database import (
     get_secret_numbers,
     count_available_secrets,
     is_participating,
+    set_event_on,
 )
 
 
@@ -34,10 +35,10 @@ class Register_event:
             )
 
         # Si l'event a déjà commencé, vérifie que l'user participe bien.
-        x = is_participating(cls.client, cls.user.id)
-        print(x)
-
-        if x is False:
+        if (
+            cls.client.event == True
+            and is_participating(cls.client, cls.user.id) is False
+        ):
             await cls.user.send(
                 "L'évènement a déjà commencé, vous ne pouvez plus participer."
             )
@@ -103,4 +104,5 @@ async def available(user):
 
 async def start_event(client, user):
     client.event = True
+    set_event_on()
     await user.send("L'event a bien démarré")

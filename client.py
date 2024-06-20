@@ -2,6 +2,7 @@ import discord
 import asyncio
 
 from config import TOKEN, CHANNEL, ADMIN_ID, IS_EVENT_ON
+from database import is_event_on
 from commands import (
     Register_event,
     reveal,
@@ -22,7 +23,8 @@ client = discord.Client(intents=intents)
 async def on_ready():
     print(f"We have logged in as {client.user}")
     client.channel = client.get_channel(CHANNEL)
-    client.event = IS_EVENT_ON
+    client.event = is_event_on()[1]
+    print(client.event)
 
 
 @client.event

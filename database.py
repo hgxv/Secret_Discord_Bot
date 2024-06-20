@@ -13,10 +13,12 @@ def register_secret(secret, user_id):
 
     # Si non: l'ajoute
     if not user:
-        user = cursor.execute(
+        cursor.execute(
             "INSERT INTO users (user_id, number_secrets) VALUES (%s, %s)",
             (user_id, 0),
         )
+        cursor.execute("SELECT * from users WHERE user_id LIKE %s;", [user_id])
+        user = cursor.fetchone()
 
     # Enregistre le secret dans la base de données
     cursor.execute(
@@ -54,7 +56,7 @@ async def get_secret(channel):
             "C'est le dernier secret, l'évènement va se terminer, merci à tous d'avoir participé 🙂 !"
         )
     date = datetime.datetime.now().strftime("%d/%m/%Y")
-    return f"""Secret du jour {date}:\n" **{secret[1]}** "\nÀ qui appartient ce secret ? Vous avez jusqu'à 14h pour faire une proposition. Bonne chance !"""
+    return f"""🗓️ Secret du jour : {date}\n" **{secret[1]}** "\n🕵️ À qui appartient ce secret ? Vous avez jusqu'à 17h pour faire une proposition. Bonne chance !"""
 
 
 def count_available_secrets():
@@ -78,16 +80,21 @@ def get_secret_numbers(user):
 
 
 def is_participating(client, user_id):
-    print("rentre dans is_participating")
-    print(f"event : {client.event}")
+    cursor.execute(
+        "SELECT COUNT(*) FROM secrets JOIN users ON secrets.user_id = users.id WHERE users.user_id LIKE %s;",
+        ([str(user_id)]),
+    )
+    if cursor.fetchone()[0] > 1:
+        return True
 
-    if client.event == True:
-        try:
-            print(f"num secrets : {get_secret_numbers(user_id)}")
-            print(f"len : {len(get_secret_numbers(user_id))}")
-            if len(get_secret_numbers(user_id)) > 1:
-                return True
-            return False
-        except:
-            print("passe dans False")
-            return False
+    return False
+
+
+def is_event_on():
+    cursor.execute("SELECT * FROM event;")
+    return cursor.fetchone()
+
+
+def set_event_on():
+    cursor.execute("UPDATE event SET is_event_on = %s WHERE id=1;", ([True]))
+    conn.commit()
